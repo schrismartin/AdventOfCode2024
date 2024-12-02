@@ -8,6 +8,9 @@ let package = Package(
   platforms: [
     .macOS(.v10_15)
   ],
+  dependencies: [
+    .package(url: "https://github.com/pointfreeco/swift-parsing.git", from: "0.13.0")
+  ],
   targets: [
     .executableTarget(
       name: "Day1"
@@ -18,7 +21,8 @@ let package = Package(
     ),
     
     .executableTarget(
-      name: "Day2"
+      name: "Day2",
+      dependencies: [.product(name: "Parsing", package: "swift-parsing")]
     ),
   ]
 )
