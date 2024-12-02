@@ -24,6 +24,25 @@ import Parsing
     }
   }
   
+  static func interItemSpacing<C: Collection<Int>>(in collection: C) -> ClosedRange<Int>? {
+    let prefix = collection.prefix(2)
+    guard let first = prefix.first, let last = prefix.dropFirst().first else { return nil }
+    
+    let difference = abs(first - last)
+    if let range = interItemSpacing(in: collection.dropFirst()) {
+      return (min(range.lowerBound, difference) ... max(range.upperBound, difference))
+    } else {
+      return (difference ... difference)
+    }
+  }
+  
+  static func isLineAcceptable(line: [Int]) -> Bool {
+    let isAscending = line.sorted(by: <) == line
+    let isDescending = line.sorted(by: >) == line
+    let isAcceptableSpacing = (1 ... 3).contains(interItemSpacing(in: line) ?? 1 ... 3)
+    return (isAscending || isDescending) && isAcceptableSpacing
+  }
+  
   /***
    Fortunately, the first location The Historians want to search isn't a long walk from the Chief Historian's office.
 
@@ -59,19 +78,7 @@ import Parsing
    */
   static var partOne: Int {
     get throws {
-      func interItemSpacing<C: Collection<Int>>(in collection: C) -> ClosedRange<Int>? {
-        let prefix = collection.prefix(2)
-        guard let first = prefix.first, let last = prefix.dropFirst().first else { return nil }
-        
-        let difference = abs(first - last)
-        if let range = interItemSpacing(in: collection.dropFirst()) {
-          return (min(range.lowerBound, difference) ... max(range.upperBound, difference))
-        } else {
-          return (difference ... difference)
-        }
-      }
-      
-      return try Content.Parser().parse(input[...]).data
+      try Content.Parser().parse(input[...]).data
         .reduce(into: 0) { partialResult, line in
           let isAscending = line.sorted(by: <) == line
           let isDescending = line.sorted(by: >) == line
@@ -84,7 +91,48 @@ import Parsing
     }
   }
   
+  /**
+   The engineers are surprised by the low number of safe reports until they realize they forgot to tell you about the Problem Dampener.
+
+   The Problem Dampener is a reactor-mounted module that lets the reactor safety systems tolerate a single bad level in what would otherwise be a safe report. It's like the bad level never happened!
+
+   Now, the same rules apply as before, except if removing a single level from an unsafe report would make it safe, the report instead counts as safe.
+
+   More of the above example's reports are now safe:
+
+   7 6 4 2 1: Safe without removing any level.
+   1 2 7 8 9: Unsafe regardless of which level is removed.
+   9 7 6 2 1: Unsafe regardless of which level is removed.
+   1 3 2 4 5: Safe by removing the second level, 3.
+   8 6 4 4 1: Safe by removing the third level, 4.
+   1 3 6 7 9: Safe without removing any level.
+   Thanks to the Problem Dampener, 4 reports are actually safe!
+
+   Update your analysis by handling situations where the Problem Dampener can remove a single level from unsafe reports. How many reports are now safe?
+   */
+  static var partTwo: Int {
+    get throws {
+      try Content.Parser().parse(input[...]).data
+        .reduce(0) { partialResult, line in
+          if isLineAcceptable(line: line) {
+            return partialResult + 1
+          } else {
+            for index in line.indices {
+              var newLine = line
+              newLine.remove(at: index)
+              if isLineAcceptable(line: newLine) {
+                return partialResult + 1
+              }
+            }
+            
+            return partialResult
+          }
+        }
+    }
+  }
+  
   static func main() throws {
     try print("Part 1:", partOne)
+    try print("Part 2:", partTwo)
   }
 }
